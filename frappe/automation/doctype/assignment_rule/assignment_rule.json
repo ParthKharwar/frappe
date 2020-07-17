@@ -23,7 +23,10 @@
   "assign_to_users_section",
   "rule",
   "users",
-  "last_user"
+  "last_user",
+  "column_break_17",
+  "role",
+  "exclude_users"
  ],
  "fields": [
   {
@@ -91,15 +94,14 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Rule",
-   "options": "Round Robin\nLoad Balancing",
+   "options": "Round Robin\nLoad Balancing\nAll",
    "reqd": 1
   },
   {
    "fieldname": "users",
    "fieldtype": "Table MultiSelect",
    "label": "Users",
-   "options": "Assignment Rule User",
-   "reqd": 1
+   "options": "Assignment Rule User"
   },
   {
    "fieldname": "last_user",
@@ -129,9 +131,26 @@
    "label": "Assignment Days",
    "options": "Assignment Rule Day",
    "reqd": 1
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Link",
+   "label": "Role",
+   "options": "Role"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "exclude_users",
+   "fieldtype": "Table MultiSelect",
+   "hidden": 1,
+   "label": "Exclude Users",
+   "options": "Assignment Rule User"
   }
  ],
- "modified": "2019-09-25 14:52:12.214514",
+ "modified": "2020-07-17 02:33:22.643850",
  "modified_by": "Administrator",
  "module": "Automation",
  "name": "Assignment Rule",
