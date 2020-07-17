@@ -9,6 +9,7 @@ from frappe.model.document import Document
 from frappe.desk.form import assign_to
 import frappe.cache_manager
 from frappe import _
+from frappe.utils.user import get_users_with_role
 
 class AssignmentRule(Document):
 
@@ -17,6 +18,8 @@ class AssignmentRule(Document):
 		if not len(set(assignment_days)) == len(assignment_days):
 			repeated_days = get_repeated(assignment_days)
 			frappe.throw(_("Assignment Day {0} has been repeated.".format(frappe.bold(repeated_days))))
+		if not self.role and not self.users:
+			frappe.throw(_("Please select users or a role for assignment"))
 
 	def on_update(self): # pylint: disable=no-self-use
 		frappe.cache_manager.clear_doctype_map('Assignment Rule', self.name)
@@ -47,19 +50,20 @@ class AssignmentRule(Document):
 		# clear existing assignment, to reassign
 		assign_to.clear(doc.get('doctype'), doc.get('name'))
 
-		user = self.get_user()
+		users = self.get_users()
 
-		assign_to.add(dict(
-			assign_to = user,
-			doctype = doc.get('doctype'),
-			name = doc.get('name'),
-			description = frappe.render_template(self.description, doc),
-			assignment_rule = self.name,
-			notify = True
-		))
+		for user in users:
+			assign_to.add(dict(
+				assign_to = user,
+				doctype = doc.get('doctype'),
+				name = doc.get('name'),
+				description = frappe.render_template(self.description, doc),
+				assignment_rule = self.name,
+				notify = True
+			))
 
-		# set for reference in round robin
-		self.db_set('last_user', user)
+			# set for reference in round robin
+			self.db_set('last_user', user)
 
 	def clear_assignment(self, doc):
 		'''Clear assignments'''
@@ -71,41 +75,54 @@ class AssignmentRule(Document):
 		if self.safe_eval('close_condition', doc):
 			return assign_to.close_all_assignments(doc.get('doctype'), doc.get('name'))
 
-	def get_user(self):
+	def get_users(self):
 		'''
-		Get the next user for assignment
+		Get the next users for assignment
 		'''
-		if self.rule == 'Round Robin':
-			return self.get_user_round_robin()
-		elif self.rule == 'Load Balancing':
-			return self.get_user_load_balancing()
+		user_list = []
 
-	def get_user_round_robin(self):
+		if self.role:
+			user_list = get_users_with_role(self.role)
+		for user in self.users:
+			if user.user not in user_list:
+				user_list.append(user.user)
+		for user in self.exclude_users:
+			if user.user in user_list:
+				user_list.remove(user.user)
+
+		if self.rule == 'All':
+			return user_list			
+		elif self.rule == 'Round Robin':
+			return [self.get_user_round_robin(user_list)]
+		elif self.rule == 'Load Balancing':
+			return [self.get_user_load_balancing(user_list)]
+
+	def get_user_round_robin(self, user_list):
 		'''
 		Get next user based on round robin
 		'''
 
-		# first time, or last in list, pick the first
-		if not self.last_user or self.last_user == self.users[-1].user:
-			return self.users[0].user
+		# first time, last in list, or user not longer in list, pick the first
+		if not self.last_user or self.last_user == self.user_list[-1] or self.last_user not in user_list:
+			return user_list[0]
 
 		# find out the next user in the list
-		for i, d in enumerate(self.users):
-			if self.last_user == d.user:
-				return self.users[i+1].user
+		for i, user in enumerate(user_list):
+			if self.last_user == user:
+				return self.user_list[i+1]
 
 		# bad last user, assign to the first one
-		return self.users[0].user
+		return self.user_list[0]
 
-	def get_user_load_balancing(self):
+	def get_user_load_balancing(self, user_list):
 		'''Assign to the user with least number of open assignments'''
 		counts = []
-		for d in self.users:
+		for user in user_list:
 			counts.append(dict(
-				user = d.user,
+				user = user,
 				count = frappe.db.count('ToDo', dict(
 					reference_type = self.document_type,
-					owner = d.user,
+					owner = user,
 					status = "Open"))
 			))
 
