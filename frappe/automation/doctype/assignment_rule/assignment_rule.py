@@ -19,7 +19,7 @@ class AssignmentRule(Document):
 			repeated_days = get_repeated(assignment_days)
 			frappe.throw(_("Assignment Day {0} has been repeated.".format(frappe.bold(repeated_days))))
 		if not self.role and not self.users:
-			frappe.throw(_("Please select users or a role for assignment"))
+			frappe.throw(_("Please select Users or Role for assignment"))
 
 	def on_update(self): # pylint: disable=no-self-use
 		frappe.cache_manager.clear_doctype_map('Assignment Rule', self.name)
@@ -62,8 +62,8 @@ class AssignmentRule(Document):
 				notify = True
 			))
 
-			# set for reference in round robin
-			self.db_set('last_user', user)
+		# set for reference in round robin
+		self.db_set('last_user', users[-1])
 
 	def clear_assignment(self, doc):
 		'''Clear assignments'''
@@ -91,7 +91,7 @@ class AssignmentRule(Document):
 				user_list.remove(user.user)
 
 		if self.rule == 'All':
-			return user_list			
+			return user_list
 		elif self.rule == 'Round Robin':
 			return [self.get_user_round_robin(user_list)]
 		elif self.rule == 'Load Balancing':
