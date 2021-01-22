@@ -341,8 +341,7 @@ class User(Document):
 			where `user`=%s""", (self.name))
 
 		# delete notification settings
-		frappe.db.sql("""DELETE FROM `tabNotification Settings` WHERE `name`=%s""", 
-			(self.name))
+		frappe.delete_doc("Notification Settings", self.name, ignore_permissions=True)
 
 
 	def before_rename(self, old_name, new_name, merge=False):
