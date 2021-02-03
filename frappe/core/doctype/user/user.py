@@ -129,7 +129,7 @@ class User(Document):
 
 		# enable notifications if the user has been enabled
 		if cint(self.enabled):
-			enable_disable_notifications(self.name, True)
+			enable_disable_notifications(self.name, enabled=True)
 
 	def add_system_manager_role(self):
 		# if adding system manager, do nothing
