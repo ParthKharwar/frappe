@@ -42,7 +42,7 @@ def create_notification_settings(user):
 		frappe.db.commit()
 
 def enable_disable_notifications(user, enabled):
-	frappe.db.set_value("Notification Settings", user, 'enabled', enabled)
+	frappe.set_value("Notification Settings", user, 'enabled', enabled)
 
 
 @frappe.whitelist()

@@ -121,7 +121,7 @@ class User(Document):
 		if not cint(self.enabled):
 			self.a_system_manager_should_exist()
 			# disable notifications if the user has been disabled
-			enable_disable_notifications(self.name, False)
+			enable_disable_notifications(self.name, enabled=False)
 
 		# clear sessions if disabled
 		if not cint(self.enabled) and getattr(frappe.local, "login_manager", None):
